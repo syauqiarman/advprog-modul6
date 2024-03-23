@@ -23,3 +23,77 @@ Terdapat pembaruan terhadap method `handle_connection`untuk melakukan respons te
 2. Membaca konten dari file `hello.html` dan mengonversinya menjadi string lalu disimpan di variabel `contents`.
 3. Menghitung panjang konten untuk disertakan dalam header respons.
 4. Membuat respons HTTP lengkap yang mencakup status line, header, dan konten. Respons ini kemudian dikirim kembali ke klien melalui stream yang sama.
+
+### Commit 3
+![Commit 3 screen capture](/assets/images/commit3.png)
+
+Pada awalnya, website melakukan respons yang sama terhadap respons dari client. Sekarang website harus menangani dua respons yang berbeda, sehingga perlu dilakukan pemeriksaan terhadap `request_line` untuk menentukan tindakan selanjutnya. Jika `request_line` sesuai dengan permintaan GET dari path yang diinginkan, konten dari file `hello.html` akan dikirimkan. Jika tidak sesuai, maka konten dari file `404.html` akan dikirim sebagai tanda bahwa permintaan yang diminta tidak ditemukan. 
+
+Adapun isi dari `404.html` adalah sebagai berikut:
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Hello!</title>
+  </head>
+  <body>
+    <h1>Oops!</h1>
+    <p>Sorry, I don't know what you're asking for.</p>
+  </body>
+</html>
+```
+
+Lalu perubahan `main.rs` yaitu di method `handle_connection` setelah dilakukan pembaruan adalah sebagai berikut:
+```rust
+fn handle_connection(mut stream: TcpStream) {
+    let buf_reader = BufReader::new(&mut stream);
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
+
+    if request_line == "GET / HTTP/1.1" {
+        let status_line = "HTTP/1.1 200 OK";
+        let contents = fs::read_to_string("hello.html").unwrap();
+        let length = contents.len();
+
+        let response = format!(
+            "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+        );
+
+        stream.write_all(response.as_bytes()).unwrap();
+    } else {
+        let status_line = "HTTP/1.1 404 NOT FOUND";
+        let contents = fs::read_to_string("404.html").unwrap();
+        let length = contents.len();
+
+        let response = format!(
+            "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+        );
+
+        stream.write_all(response.as_bytes()).unwrap();
+    }
+}
+```
+
+Refactoring diperlukan karena blok if-else sebelumnya mengulangi proses pembacaan file HTML dan penulisan kontennya ke dalam stream. Dengan menggunakan pendekatan yang lebih modular, kondisional hanya diterapkan pada `request_line`, kemudian prosedur yang sama dilakukan untuk membaca file dan mengirim kontennya ke dalam stream tanpa duplikasi kode. Hal ini mengurangi repetisi dan membuat kode menjadi lebih terstruktur. Berikut isi `handle_connection` setelah dilakukan refactoring:
+```rust
+fn handle_connection(mut stream: TcpStream) {
+    let buf_reader = BufReader::new(&mut stream);
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
+
+    let (status_line, filename) = if request_line == "GET / HTTP/1.1" {
+        ("HTTP/1.1 200 OK", "hello.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
+
+    let contents = fs::read_to_string(filename).unwrap();
+    let length = contents.len();
+
+    let response =
+        format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+
+    stream.write_all(response.as_bytes()).unwrap();
+}
+```
+
+Jadi, dalam pembaruan fungsi `handle_connection`, pembacaan file HTML dan penulisan konten ke dalam stream hanya dilakukan sekali setelah pengecekan kondisi, berdasarkan nilai `request_line`.
