@@ -105,3 +105,6 @@ Pada kasus ini, jika mengakses `127.0.0.1` dan `127.0.0.1/sleep` secara bersamaa
 
 ### Commit 5
 Untuk menjalankan sistem secara efisien dengan multithreading, kita perlu membangun ThreadPool yang mampu menangani berbagai permintaan secara bersamaan. Langkah selanjutnya adalah membuat Worker untuk menerima dan menjalankan tugas yang dikirimkan, dimana worker pada program memiliki id dan thread nya masing-masing. Komunikasi antara ThreadPool dan Worker diatur melalui mekanisme pengiriman pesan. Dengan demikian, penggunaan ThreadPool dapat meningkatkan performa sistem dan menghindari latency dalam eksekusi program, sehingga disebut sebagai model replicated workers yang efisien.
+
+### Bonus Implementation
+Jika dilihat dari sisi keamanannya, penggunaan `build` lebih aman dari sisi error handling dibandingkan penggunaan `new`, karena jika jumlah yang diberikan <= 0 maka program akan mengembalikan error.
