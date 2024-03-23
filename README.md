@@ -97,3 +97,8 @@ fn handle_connection(mut stream: TcpStream) {
 ```
 
 Jadi, dalam pembaruan fungsi `handle_connection`, pembacaan file HTML dan penulisan konten ke dalam stream hanya dilakukan sekali setelah pengecekan kondisi, berdasarkan nilai `request_line`.
+
+### Commit 4
+Setelah dilakukan penyesuaian if else dengan menggunakan match di `handle_connection`, sehingga nilai `request_line` bisa dibandingkan dengan pola yang ada. Untuk mengilustrasikan single-threadednya bisa dengan menambahkan endpoint baru seperti `/sleep`, maka penundaan proses akan dilakukan selama 10 detik dengan menggunakan `thread::sleep(Duration::from_secs(10));`.
+
+Pada kasus ini, jika mengakses `127.0.0.1` dan `127.0.0.1/sleep` secara bersamaan, respons dari `/sleep` akan menunda respon dari permintaan lainnya. Website memberikan respon dengan delay 10 detik karena terdapat thread sleep yang menghentikan thread sementara. Dengan demikian, penggunaan single thread dapat menyebabkan penundaan dalam pemrosesan permintaan di server.
